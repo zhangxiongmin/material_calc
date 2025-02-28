@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <title>材料计算器</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #1a1a1a;
+            display: flex;
+            color: #e0e0e0;
+        }
+        .main-content {
+            flex: 2;
+            margin-right: 20px;
+            background: #2d2d2d;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+        .history-panel {
+            flex: 1;
+            background: #2d2d2d;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 40px);
+        }
+        h1, h2 {
+            color: #4CAF50;
+            text-align: center;
+            margin-bottom: 30px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .shapeFields {
+            margin: 20px 0;
+            padding: 25px;
+            border: 1px solid #3d3d3d;
+            border-radius: 12px;
+            background-color: #252525;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        }
+        label {
+            display: inline-block;
+            width: 120px;
+            margin: 10px 0;
+            color: #b0b0b0;
+            font-weight: 500;
+        }
+        input, select {
+            margin: 10px 0;
+            padding: 10px;
+            border: 1px solid #3d3d3d;
+            border-radius: 6px;
+            width: 200px;
+            background-color: #333;
+            color: #e0e0e0;
+        }
+        select {
+            background-color: #333;
+            cursor: pointer;
+        }
+        input:focus, select:focus {
+            outline: none;
+            border-color: #4CAF50;
+            box-shadow: 0 0 5px rgba(76,175,80,0.3);
+        }
+        button {
+            display: block;
+            margin: 25px auto;
+            padding: 12px 35px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        button:hover {
+            background-color: #45a049;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+        #result {
+            margin-top: 25px;
+            padding: 20px;
+            border-radius: 8px;
+            background-color: #252525;
+            text-align: center;
+            font-size: 18px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+            border: 1px solid #3d3d3d;
+        }
+        .history-item {
+            padding: 15px;
+            border-bottom: 1px solid #3d3d3d;
+            position: relative;
+            margin-bottom: 15px;
+            background-color: #252525;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .history-item:hover {
+            background-color: #2a2a2a;
+        }
+        .history-content {
+            flex-grow: 1;
+        }
+        .delete-btn {
+            margin-left: 15px;
+            background: #d32f2f;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 6px 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            height: fit-content;
+        }
+        .delete-btn:hover {
+            background: #b71c1c;
+        }
+        .total-stats {
+            margin-bottom: 25px;
+            padding: 20px;
+            background: #1b5e20;
+            border-radius: 8px;
+            font-weight: bold;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        }
+        #historyList {
+            overflow-y: auto;
+            flex-grow: 1;
+            padding-right: 10px;
+        }
+        #historyList::-webkit-scrollbar {
+            width: 8px;
+        }
+        #historyList::-webkit-scrollbar-track {
+            background: #1a1a1a;
+            border-radius: 4px;
+        }
+        #historyList::-webkit-scrollbar-thumb {
+            background: #4CAF50;
+            border-radius: 4px;
+        }
+        #historyList::-webkit-scrollbar-thumb:hover {
+            background: #45a049;
+        }
+    </style>
+    <script>
+        // 从localStorage加载历史记录
+        let calculationHistory = JSON.parse(localStorage.getItem('calculationHistory')) || [];
+
+        function showFields() {
+            // 隐藏所有形状特定字段
+            document.getElementById('circularRodFields').style.display = 'none';
+            document.getElementById('circularTubeFields').style.display = 'none';
+            document.getElementById('squareBarFields').style.display = 'none';
+            document.getElementById('squareTubeFields').style.display = 'none';
+            
+            // 显示选中的形状对应的字段
+            var shape = document.getElementById('shape').value;
+            if(shape === '圆棒') {
+                document.getElementById('circularRodFields').style.display = 'block';
+            } else if(shape === '圆管') {
+                document.getElementById('circularTubeFields').style.display = 'block';
+            } else if(shape === '方料') {
+                document.getElementById('squareBarFields').style.display = 'block';
+            } else if(shape === '方管') {
+                document.getElementById('squareTubeFields').style.display = 'block';
+            }
+        }
+
+        function updateHistory() {
+            const historyList = document.getElementById('historyList');
+            historyList.innerHTML = '';
+            let totalWeight = 0;
+            let totalPrice = 0;
+
+            // 计算总计
+            calculationHistory.forEach(item => {
+                totalWeight += parseFloat(item.weight);
+                totalPrice += parseFloat(item.price);
+            });
+
+            // 先显示总计
+            document.getElementById('totalStats').innerHTML = `
+                总重量: ${totalWeight.toFixed(3)}kg<br>
+                总价格: ${totalPrice.toFixed(2)}元
+            `;
+
+            // 倒序显示历史记录
+            calculationHistory.slice().reverse().forEach((item, index) => {
+                const div = document.createElement('div');
+                div.className = 'history-item';
+                div.innerHTML = `
+                    <div class="history-content">
+                        <div style="margin-bottom: 5px;">
+                            <strong>${item.shape}</strong>
+                        </div>
+                        <div>
+                            重量: ${item.weight}kg<br>
+                            价格: ${item.price}元
+                        </div>
+                    </div>
+                    <button class="delete-btn" onclick="deleteHistoryItem(${calculationHistory.length - 1 - index})">删除</button>
+                `;
+                historyList.appendChild(div);
+            });
+
+            // 保存到localStorage
+            localStorage.setItem('calculationHistory', JSON.stringify(calculationHistory));
+        }
+
+        function deleteHistoryItem(index) {
+            calculationHistory.splice(index, 1);
+            updateHistory();
+        }
+
+        function calculate() {
+            var formData = new FormData(document.getElementById('calculatorForm'));
+            fetch('/calculate', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if(data.error) {
+                    document.getElementById('result').innerHTML = '错误: ' + data.error;
+                    document.getElementById('result').style.color = '#f44336';
+                } else {
+                    document.getElementById('result').innerHTML = 
+                        '重量: ' + data.weight + ' kg<br>' +
+                        '总价: ' + data.total_price + ' 元';
+                    document.getElementById('result').style.color = '#4CAF50';
+                    
+                    // 添加到历史记录
+                    calculationHistory.push({
+                        shape: document.getElementById('shape').value,
+                        weight: data.weight,
+                        price: data.total_price
+                    });
+                    updateHistory();
+                }
+            })
+            .catch(error => {
+                document.getElementById('result').innerHTML = '计算出错: ' + error;
+                document.getElementById('result').style.color = '#f44336';
+            });
+        }
+
+        // 页面加载完成后显示默认形状的字段和历史记录
+        window.onload = function() {
+            showFields();
+            updateHistory();
+        }
+    </script>
+</head>
+<body>
+    <div class="main-content">
+        <h1>材料计算器</h1>
+        <form id="calculatorForm" onsubmit="return false;">
+            <div class="shapeFields">
+                <label for="shape">形状:</label>
+                <select id="shape" name="shape" onchange="showFields()">
+                    <option value="圆棒">圆棒</option>
+                    <option value="圆管">圆管</option>
+                    <option value="方料">方料</option>
+                    <option value="方管">方管</option>
+                </select>
+                <br>
+                <label>密度(g/cm³):</label>
+                <input type="number" name="density" step="0.1" required>
+                <br>
+                <label>单价(元/kg):</label>
+                <input type="number" name="price" step="0.01" required>
+            </div>
+
+            <div id="circularRodFields" class="shapeFields" style="display:none">
+                <label>直径(mm):</label>
+                <input type="number" name="radius" step="0.1" required>
+                <br>
+                <label>长度(mm):</label>
+                <input type="number" name="length" step="0.1" required>
+            </div>
+
+            <div id="circularTubeFields" class="shapeFields" style="display:none">
+                <label>外径(mm):</label>
+                <input type="number" name="outer_diameter" step="0.1" required>
+                <br>
+                <label>内径(mm):</label>
+                <input type="number" name="inner_diameter" step="0.1" required>
+                <br>
+                <label>长度(mm):</label>
+                <input type="number" name="length" step="0.1" required>
+            </div>
+
+            <div id="squareBarFields" class="shapeFields" style="display:none">
+                <label>长度(mm):</label>
+                <input type="number" name="length" step="0.1" required>
+                <br>
+                <label>宽度(mm):</label>
+                <input type="number" name="width" step="0.1" required>
+                <br>
+                <label>高度(mm):</label>
+                <input type="number" name="height" step="0.1" required>
+            </div>
+
+            <div id="squareTubeFields" class="shapeFields" style="display:none">
+                <label>外长(mm):</label>
+                <input type="number" name="outer_length" step="0.1" required>
+                <br>
+                <label>外宽(mm):</label>
+                <input type="number" name="outer_width" step="0.1" required>
+                <br>
+                <label>内长(mm):</label>
+                <input type="number" name="inner_length" step="0.1" required>
+                <br>
+                <label>内宽(mm):</label>
+                <input type="number" name="inner_width" step="0.1" required>
+                <br>
+                <label>高度(mm):</label>
+                <input type="number" name="height" step="0.1" required>
+            </div>
+
+            <button onclick="calculate()">计算</button>
+        </form>
+
+        <div id="result"></div>
+    </div>
+
+    <div class="history-panel">
+        <h2>计算历史</h2>
+        <div id="totalStats" class="total-stats"></div>
+        <div id="historyList"></div>
+    </div>
+</body>
+</html>
