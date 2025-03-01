@@ -15,17 +15,17 @@ def calculate_volume(shape, params):
     """计算不同形状的体积(立方米)"""
     if shape == '圆棒':
         radius = mm_to_m(float(params['radius'])) / 2  # 直径转半径
-        length = mm_to_m(float(params['length']))
+        length = mm_to_m(float(params['length1']))
         return math.pi * (radius ** 2) * length
         
     elif shape == '圆管':
         outer_radius = mm_to_m(float(params['outer_diameter'])) / 2
         inner_radius = mm_to_m(float(params['inner_diameter'])) / 2
-        length = mm_to_m(float(params['length']))
+        length = mm_to_m(float(params['length2']))
         return math.pi * (outer_radius ** 2 - inner_radius ** 2) * length
         
     elif shape == '方料':
-        length = mm_to_m(float(params['length']))
+        length = mm_to_m(float(params['length3']))
         width = mm_to_m(float(params['width']))
         height = mm_to_m(float(params['height']))
         return length * width * height
