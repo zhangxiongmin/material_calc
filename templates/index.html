@@ -187,15 +187,22 @@
             historyList.innerHTML = '';
             let totalWeight = 0;
             let totalPrice = 0;
+            let totalQuantity = 0;
 
             // 计算总计
             calculationHistory.forEach(item => {
-                totalWeight += parseFloat(item.weight);
-                totalPrice += parseFloat(item.price);
+                const weight = parseFloat(item.weight) || 0;
+                const price = parseFloat(item.price) || 0;
+                const quantity = parseFloat(item.quantity) || 0;
+                
+                totalWeight += weight;
+                totalPrice += price;
+                totalQuantity += quantity;
             });
 
             // 先显示总计
             document.getElementById('totalStats').innerHTML = `
+                总数量: ${totalQuantity}<br>
                 总重量: ${totalWeight.toFixed(3)}kg<br>
                 总价格: ${totalPrice.toFixed(2)}元
             `;
@@ -210,6 +217,7 @@
                             <strong>${item.shape}</strong>
                         </div>
                         <div>
+                            数量: ${item.quantity}<br>
                             重量: ${item.weight}kg<br>
                             价格: ${item.price}元
                         </div>
@@ -241,6 +249,7 @@
                     document.getElementById('result').style.color = '#f44336';
                 } else {
                     document.getElementById('result').innerHTML = 
+                        '数量: ' + data.quantity + '<br>' +
                         '重量: ' + data.weight + ' kg<br>' +
                         '总价: ' + data.total_price + ' 元';
                     document.getElementById('result').style.color = '#4CAF50';
@@ -249,7 +258,8 @@
                     calculationHistory.push({
                         shape: document.getElementById('shape').value,
                         weight: data.weight,
-                        price: data.total_price
+                        price: data.total_price,
+                        quantity: data.quantity  // 添加数量信息
                     });
                     updateHistory();
                 }
@@ -285,6 +295,9 @@
                 <br>
                 <label>单价(元/kg):</label>
                 <input type="number" name="price" step="0.01" required>
+                <br>
+                <label>数量:</label>
+                <input type="number" name="quantity" step="1" value="1" required>  <!-- 添加数量输入框，默认值为1 -->
             </div>
 
             <div id="circularRodFields" class="shapeFields" style="display:none">
