@@ -61,27 +61,30 @@ def calculate():
         shape = request.form.get('shape')
         density = float(request.form.get('density'))*1000.0  # 转换为kg/m³
         price = float(request.form.get('price'))
+        quantity = int(request.form.get('quantity', 1))  # 获取数量，默认为1
         
         # 使用calculate_volume函数统一处理体积计算
         params = {}
         for key in request.form:
-            if key not in ['shape', 'density', 'price']:
+            if key not in ['shape', 'density', 'price', 'quantity']:
                 params[key] = request.form.get(key)
                 
         volume = calculate_volume(shape, params)
-        weight = volume * density  # 计算重量(kg)
+        weight = volume * density * quantity  # 计算重量(kg)，并乘以数量
         total_price = weight * price  # 计算总价格
         
         # 将计算结果添加到历史记录中
         result = {
             'shape': shape,
             'weight': round(weight, 3),
-            'total_price': round(total_price, 2)
+            'total_price': round(total_price, 2),
+            'quantity': quantity  # 添加数量信息
         }
         
         return jsonify({
             'weight': round(weight, 3),
-            'total_price': round(total_price, 2)
+            'total_price': round(total_price, 2),
+            'quantity': quantity  # 添加数量信息
         })
     except (TypeError, ValueError) as e:
         return jsonify({'error': '请输入有效的数值'}), 400
